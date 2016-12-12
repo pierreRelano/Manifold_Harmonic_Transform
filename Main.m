@@ -1,8 +1,4 @@
-path(path, 'mesh/');
-path(path, 'mesh/meshes/');
-path(path, 'mesh/toscahires-mat/');
-path(path, 'mesh/mesh_deform/');
-path(path, 'mesh/Models/');
+path(path, 'meshes/');
 path(path, 'lib/gptoolbox/mesh');
 path(path, 'lib/gptoolbox/external/toolbox_fast_marching/toolbox');
 path(path, 'lib/toolbox_graph/');
@@ -64,6 +60,7 @@ options.symmetrize = 1;
 options.normalize = 0;
 L_2 = compute_mesh_laplacian(vertices,faces,'conformal',options);
 
+sprintf('Lapalce matrix - done');  
 
 M = full(massmatrix(vertices, faces, 'barycentric'));   % Get dual area of vertices (Hodge star 0)
 sprintf('Compupte Laplacian - done');   
