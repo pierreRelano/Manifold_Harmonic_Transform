@@ -170,7 +170,7 @@ plot((0:(1/(eigen_number - 1)):1), F_high_exa_abs, 'y');
 %low freq exageration
 [b_low_exa,a_low_exa] = butter(6,0.1,'low');
 F_low_exa = freqz(b_low_exa,a_low_exa,floor(eigen_number))';
-F_low_exa_abs = abs(F_low_exa)+1;
+F_low_exa_abs = abs(F_low_exa)*4+1; %FAT exageration!
 hold on
 plot((0:(1/(eigen_number - 1)):1), F_low_exa_abs, 'c');
 
