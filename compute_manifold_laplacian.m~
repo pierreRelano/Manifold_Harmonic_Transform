@@ -6,7 +6,6 @@ function L = compute_manifold_laplacian(vertex, faces, type, options)
         type = 'contan';
     end
 
-    %TODO: retest the indice of combinatorial laplacian
     switch lower(type)
         case 'combinatorial'
             %Compute edge list.

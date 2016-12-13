@@ -56,9 +56,10 @@ camlight;
 
 
 L = full(cotmatrix(vertices, faces));   % Get cotangent Laplacian weight
-options.symmetrize = 1;
-options.normalize = 0;
-L_2 = compute_mesh_laplacian(vertices,faces,'conformal',options);
+%options.symmetrize = 1;
+%options.normalize = 0;
+%L = compute_manifold_laplacian(vertices, faces, 'combinatorial', options);
+%L_2 = compute_mesh_laplacian(vertices,faces,'conformal',options);
 
 sprintf('Lapalce matrix - done');  
 
@@ -159,6 +160,13 @@ F_high = freqz(b_high,a_high,floor(eigen_number))';
 hold on
 plot((0:(1/(eigen_number - 1)):1), abs(F_high), 'g');
 
+%high freq exageration
+[b_high_exa,a_high_exa] = butter(4,0.6,'high');
+F_high_exa = freqz(b_high_exa,a_high_exa,floor(eigen_number))';
+F_high_exa_abs = abs(F_high_exa)+1;
+hold on
+plot((0:(1/(eigen_number - 1)):1), F_high_exa_abs, 'y');
+
 %band reject filter 
 [b_stop,a_stop] = butter(15,[0.3 0.7],'stop');
 F_stop = freqz(b_stop,a_stop,floor(eigen_number))';
@@ -166,6 +174,11 @@ hold on
 plot((0:(1/(eigen_number - 1)):1), abs(F_stop), 'm');
 
 %design filter for band-exageration
+[b_stop,a_stop] = butter(3,[0.3 0.7],'bandpass');
+F_stop = freqz(b_stop,a_stop,floor(eigen_number))';
+hold on
+plot((0:(1/(eigen_number - 1)):1), abs(F_stop), 'b');
+
 
 %-------------------------------------------------------------
 %   STEP 6: Filter mesh and inverse MHT into geometry space 
