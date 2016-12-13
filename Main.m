@@ -167,13 +167,20 @@ F_high_exa_abs = abs(F_high_exa)+1;
 hold on
 plot((0:(1/(eigen_number - 1)):1), F_high_exa_abs, 'y');
 
+%low freq exageration
+[b_low_exa,a_low_exa] = butter(6,0.1,'low');
+F_low_exa = freqz(b_low_exa,a_low_exa,floor(eigen_number))';
+F_low_exa_abs = abs(F_low_exa)+1;
+hold on
+plot((0:(1/(eigen_number - 1)):1), F_low_exa_abs, 'c');
+
 %band reject filter 
 [b_stop,a_stop] = butter(15,[0.3 0.7],'stop');
 F_stop = freqz(b_stop,a_stop,floor(eigen_number))';
 hold on
 plot((0:(1/(eigen_number - 1)):1), abs(F_stop), 'm');
 
-%design filter for band-exageration
+%design bandpass filter
 [b_stop,a_stop] = butter(3,[0.3 0.7],'bandpass');
 F_stop = freqz(b_stop,a_stop,floor(eigen_number))';
 hold on
