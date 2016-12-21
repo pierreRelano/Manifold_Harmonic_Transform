@@ -14,7 +14,7 @@ clear options;
 %------------------------
 %load mesh
 
-name = 'elephant-50kv';
+name = 'bunny';
 [vertex,faces] = read_mesh([name '.off']);
 n = size(vertex,2);
 options.name = name;
@@ -30,6 +30,7 @@ clf;
 hold on;
 options.face_vertex_color = W;
 plot_mesh(vertex,faces, options);
+shading interp; axis tight;
 colormap jet(256);
 
 %------------------------
@@ -44,6 +45,7 @@ clf;
 hold on;
 options.face_vertex_color = mod( 20*D/max(D),1 );
 plot_mesh(vertex,faces, options);
+shading interp; axis tight;
 colormap jet(256);
 h = plot3(vertex(1,landmarks), vertex(2,landmarks), vertex(3,landmarks), 'r.');
 set(h, 'MarkerSize', 20);

@@ -3,7 +3,7 @@ path(path, 'lib/gptoolbox/mesh');
 path(path, 'lib/gptoolbox/external/toolbox_fast_marching/toolbox');
 path(path, 'lib/toolbox_graph/');
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%                                                                   %%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% ALGORITHM:                                                          %%%
 %%% Mesh Filtering with Manifold Harmonics [Vallet et al. 2008]         %%%
 %%%                                                                     %%%
@@ -16,12 +16,6 @@ path(path, 'lib/toolbox_graph/');
 %%% 6. Transform the mesh back into geometry space (MHT-1)              %%%
 %%%                                                                     %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% NOTES:
-% - THIS SCRIPT DEPANDS ON GPTOOLBOX (Mesh reading/displaying and some
-%   computation:
-%   https://github.com/alecjacobson/gptoolbox
-%
 
 clc;
 clear;
@@ -46,9 +40,9 @@ end
 figure('name', 'Before MHT');
 plot_mesh(vertices, faces);
 colormap gray(256)
+%shading interp; axis tight;
 shading faceted;
 camlight;
-
 
 %-------------------------------------------------------------
 %               STEP 1: Build discrete Laplacian
@@ -56,6 +50,8 @@ camlight;
 
 
 L = full(cotmatrix(vertices, faces));   % Get cotangent Laplacian weight
+% L2 = full(compute_cotangent_matrix(vertices, faces));
+% L_diff = L - L2;
 %options.symmetrize = 1;
 %options.normalize = 0;
 %L = compute_manifold_laplacian(vertices, faces, 'combinatorial', options);
@@ -76,7 +72,6 @@ beltrami = beltrami * -1;   % For positive eigenvalues
 beltrami = (beltrami + beltrami.') * 0.5;   % Now our Laplacian is symmetric, and
                                             % its eigenvectors are orthonormal
 sprintf('Lapalce-Beltrami operator - done');  
-
 
 %-------------------------------------------------------------
 %          STEP 2: Compute Eigenvectors Laplcian MHB
@@ -116,8 +111,6 @@ for i=1:length(index_list)
     colormap winter(256);
 end
 
-pause
-
 %-------------------------------------------------------------
 %    STEP 4: Transform the mesh into frequency space (MHT)
 %-------------------------------------------------------------
@@ -138,12 +131,13 @@ figure('name', 'MHB Spectrum');
 plot(MHT); axis('tight');
 legend('X', 'Y', 'Z');
 
+
 %-------------------------------------------------------------
 %               STEP 5: Design the filters
 %-------------------------------------------------------------
 
 %smooth lowpass filter
-[b_low,a_low] = butter(2,0.4,'low');
+[b_low,a_low] = butter(2,0.2,'low');
 F_low = freqz(b_low,a_low,floor(eigen_number))';
 hold on
 plot((0:(1/(eigen_number - 1)):1), abs(F_low), 'r');
@@ -161,16 +155,16 @@ hold on
 plot((0:(1/(eigen_number - 1)):1), abs(F_high), 'g');
 
 %high freq exageration
-[b_high_exa,a_high_exa] = butter(4,0.6,'high');
+[b_high_exa,a_high_exa] = butter(4,0.95,'high');
 F_high_exa = freqz(b_high_exa,a_high_exa,floor(eigen_number))';
-F_high_exa_abs = abs(F_high_exa)+1;
+F_high_exa_abs = abs(F_high_exa)*7+1;
 hold on
 plot((0:(1/(eigen_number - 1)):1), F_high_exa_abs, 'y');
 
 %low freq exageration
-[b_low_exa,a_low_exa] = butter(6,0.1,'low');
+[b_low_exa,a_low_exa] = butter(6,0.5,'low');
 F_low_exa = freqz(b_low_exa,a_low_exa,floor(eigen_number))';
-F_low_exa_abs = abs(F_low_exa)*4+1; %FAT exageration!
+F_low_exa_abs = abs(F_low_exa)*10 +1; %FAT exageration!
 hold on
 plot((0:(1/(eigen_number - 1)):1), F_low_exa_abs, 'c');
 
@@ -191,64 +185,64 @@ plot((0:(1/(eigen_number - 1)):1), abs(F_stop), 'b');
 %   STEP 6: Filter mesh and inverse MHT into geometry space 
 %-------------------------------------------------------------
 
-% Allocate memory for vertices
-[vertexNumber, ~] = size(vertices); % Get vertex number
-dumVertX = zeros(vertexNumber,1);
-dumVertY = zeros(vertexNumber,1);
-dumVertZ = zeros(vertexNumber,1);
-
-%Choose filter from F_low, F_low2, F_high, F_stop
-F = abs(F_low);
-
-% MHT-1
-for k = 1:eigen_number
-     dumVertX = dumVertX + (F(1,k) * Xk(1,k) * Hk(:,k));
-     dumVertY = dumVertY + (F(1,k) * Yk(1,k) * Hk(:,k));
-     dumVertZ = dumVertZ + (F(1,k) * Zk(1,k) * Hk(:,k));
-end
-
-vertex_reconstruct = zeros(vertexNumber,3);
-vertex_reconstruct(:,1) = dumVertX;
-vertex_reconstruct(:,2) = dumVertY;
-vertex_reconstruct(:,3) = dumVertZ;
-% DISPLAY NEW MESH
-figure('name', strcat('After MHT: ', int2str(eigen_number), ' bases is in use'));
-plot_mesh(vertex_reconstruct, faces);
-colormap gray(256)
-shading faceted;
-camlight;
-
-
-% figure('name', 'Iterataive reconstructed meshes after the Inverse MHT adding Manifold Harmonics Basis components');
-% index_list = round(linspace(2,eigenNumber,6));
-% for i=1:length(index_list)
-%     percent_modes_to_kept = index_list(i);
-%     % set to zero high pass coefficients
-%     q = round(percent_modes_to_kept/100*eigenNumber); % number of modes to filter
-%     % set to 0 high-pass coeffs
-%     Xk_temp = MHT(:,1)';
-%     Yk_temp = MHT(:,2)';
-%     Zk_temp = MHT(:,3)';
-%     Xk_temp(q+1:end) = 0;
-%     Yk_temp(q+1:end) = 0;
-%     Zk_temp(q+1:end) = 0;
-%     % MHT-1
-%     for k = 1:eigenNumber
-%          dumVertX = dumVertX + (Xk_temp(1,k) * Hk(:,k));
-%          dumVertY = dumVertY + (Yk_temp(1,k) * Hk(:,k));
-%          dumVertZ = dumVertZ + (Zk_temp(1,k) * Hk(:,k));
-%     end
-%     % MAP NEW VERTEX POSITIONS
-%     Vfinal = zeros(vertexNumber,3);
-%     Vfinal(:,1) = dumVertX;
-%     Vfinal(:,2) = dumVertY;
-%     Vfinal(:,3) = dumVertZ;
-%     % display the reconstructed mesh
-%     subplot(2,3,i);
-%     plot_mesh(Vfinal,faces);
-%     shading interp; camlight; axis tight;
-%     colormap gray(256)
+% % Allocate memory for vertices
+% [vertexNumber, ~] = size(vertices); % Get vertex number
+% dumVertX = zeros(vertexNumber,1);
+% dumVertY = zeros(vertexNumber,1);
+% dumVertZ = zeros(vertexNumber,1);
+% 
+% %Choose filter from F_low, F_low2, F_high, F_stop
+% F = F_low_exa_abs;%abs(F_low);
+% 
+% % MHT-1
+% for k = 1:eigen_number
+%      dumVertX = dumVertX + (F(1,k) * Xk(1,k) * Hk(:,k));
+%      dumVertY = dumVertY + (F(1,k) * Yk(1,k) * Hk(:,k));
+%      dumVertZ = dumVertZ + (F(1,k) * Zk(1,k) * Hk(:,k));
 % end
+% 
+% vertex_reconstruct = zeros(vertexNumber,3);
+% vertex_reconstruct(:,1) = dumVertX;
+% vertex_reconstruct(:,2) = dumVertY;
+% vertex_reconstruct(:,3) = dumVertZ;
+% % DISPLAY NEW MESH
+% figure('name', strcat('After MHT: ', int2str(eigen_number), ' bases is in use'));
+% plot_mesh(vertex_reconstruct, faces);
+% colormap gray(256)
+% shading faceted;
+% camlight;
+
+
+figure('name', 'Iterataive reconstructed meshes after the Inverse MHT adding Manifold Harmonics Basis components');
+index_list = round(linspace(2,eigenNumber,6));
+for i=1:length(index_list)
+    percent_modes_to_kept = index_list(i);
+    % set to zero high pass coefficients
+    q = round(percent_modes_to_kept/100*eigenNumber); % number of modes to filter
+    % set to 0 high-pass coeffs
+    Xk_temp = MHT(:,1)';
+    Yk_temp = MHT(:,2)';
+    Zk_temp = MHT(:,3)';
+    Xk_temp(q+1:end) = 0;
+    Yk_temp(q+1:end) = 0;
+    Zk_temp(q+1:end) = 0;
+    % MHT-1
+    for k = 1:eigenNumber
+         dumVertX = dumVertX + (Xk_temp(1,k) * Hk(:,k));
+         dumVertY = dumVertY + (Yk_temp(1,k) * Hk(:,k));
+         dumVertZ = dumVertZ + (Zk_temp(1,k) * Hk(:,k));
+    end
+    % MAP NEW VERTEX POSITIONS
+    Vfinal = zeros(vertexNumber,3);
+    Vfinal(:,1) = dumVertX;
+    Vfinal(:,2) = dumVertY;
+    Vfinal(:,3) = dumVertZ;
+    % display the reconstructed mesh
+    subplot(2,3,i);
+    plot_mesh(Vfinal,faces);
+    shading interp; camlight; axis tight;
+    colormap gray(256)
+end
 
 
 
