@@ -1,11 +1,12 @@
+restoredefaultpath
+path(path, 'lib/gptoolbox/mesh');
+path(path, 'lib/gptoolbox/external/toolbox_fast_marching/toolbox');
+path(path, 'lib/toolbox_graph/');
+path(path, 'meshes/');
 path(path, 'lib/toolbox_graph/');
 path(path, 'lib/toolbox_graph/off/');
 path(path, 'lib/toolbox_graph/toolbox/');
-path(path, 'mesh/meshes/');
-path(path, 'mesh/toscahires-mat/');
-path(path, 'mesh/mesh_deform/');
-path(path, 'lib/toolbox_signal/');
-path(path, 'lib/toolbox_general/');
+
 
 clear
 clc
@@ -14,7 +15,7 @@ clear options;
 %------------------------
 %load mesh
 
-name = 'bunny';
+name = 'elephant-50kv';
 [vertex,faces] = read_mesh([name '.off']);
 n = size(vertex,2);
 options.name = name;
@@ -61,9 +62,9 @@ options.W = ones(n,1);
 % W(vertex(1,:)<mean(vertex(1,:))) = .4;
 % options.W = W;
 
-m = 2500;
+m = 10000;
 clf;
-k = 1; displist = (2500);
+k = 1; displist = (10000);
 for i=2:m
     % select
     [tmp,landmarks(end+1)] = max(D);
@@ -126,13 +127,13 @@ camlight;
 normals = compute_normal(vertex,faces);
 rho = randn(1,size(vertex,2))*.002;
 vertex_noise = vertex + repmat(rho,3,1).*normals;
-
+write_off([name '_noise.off'],vertex_noise, faces)
 % display the mesh
 clf;
 figure('name', 'Before MHT');
 plot_mesh(vertex_noise,faces);
 colormap gray(256)
 % add the display of the triangle
-%shading faceted;
+shading interp;
 % when you rotate the camera, focuss the light using
 camlight;
